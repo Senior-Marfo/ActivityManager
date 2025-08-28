@@ -8,18 +8,18 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
-app.use(cors()); // Enable CORS - helpful if frontend is served separately
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static frontend files from "public" directory
+// Serve static files from public folder
 app.use(express.static(path.join(__dirname, 'public')));
 
-// API Routes
+// API routes (import from separate file)
 const activityRoutes = require('./routes/activityRoutes');
 app.use('/api', activityRoutes);
 
-// Fallback route for SPA or unknown routes
+// Fallback route - serve index.html for SPA style
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
@@ -30,11 +30,11 @@ mongoose.connect(process.env.MONGODB_URI, {
   useUnifiedTopology: true,
 })
 .then(() => {
-  console.log('MongoDB connected successfully');
+  console.log('Connected to MongoDB');
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
   });
 })
 .catch((error) => {
-  console.error('MongoDB connection error:', error.message);
+  console.error('MongoDB connection error:', error);
 });

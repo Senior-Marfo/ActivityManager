@@ -1,26 +1,43 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const Activity = require('./models/activitymodel.js');
 const path = require('path');
-const port = 3000;
+const cors = require('cors');
+const Activity = require('./models/activitymodel.js'); // Ensure the model is correct
+
+require('dotenv').config(); // Use .env for sensitive values
 
 const app = express();
+const PORT = process.env.PORT || 3000;
 
+// Middleware
+app.use(cors()); // Optional: needed if frontend is deployed separately
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(__dirname));
 
-//linking front-end(index.html) to port
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
+// Serve static files from the public folder
+app.use(express.static(path.join(__dirname, 'public')));
 
-//linking front-end(edit.html) to port
-app.get('/edit', (req, res) => {
-  res.sendFile(path.join(__dirname, 'edit.html'));
-});
+// Connect to MongoDB
+mongoose
+  .connect(process.env.MONGODB_URI || 'your-fallback-mongo-uri-here', {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => {
+    console.log('✅ Connected to MongoDB');
 
-// Get all activities (full details)
+    // Start server after DB connection
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on http://localhost:${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error('❌ MongoDB connection error:', err.message);
+  });
+
+/* ---------- API ROUTES ---------- */
+
+// Get all activities
 app.get('/api/activities', async (req, res) => {
   try {
     const activities = await Activity.find({});
@@ -30,7 +47,7 @@ app.get('/api/activities', async (req, res) => {
   }
 });
 
-// Get all activities with only ID and ActivityName (for listing)
+// List of activities (just name + ID)
 app.get('/api/activity-list', async (req, res) => {
   try {
     const activities = await Activity.find({}, '_id ActivityName').sort({ ActivityName: 1 });
@@ -40,86 +57,86 @@ app.get('/api/activity-list', async (req, res) => {
   }
 });
 
-// Get activity 
+// Get activity by ID
 app.get('/api/activity/:id', async (req, res) => {
   try {
     const { id } = req.params;
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ message: 'Invalid activity ID format' });
     }
+
     const activity = await Activity.findById(id);
     if (!activity) return res.status(404).json({ message: 'Activity not found' });
+
     res.status(200).json(activity);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
-// Get activity by ActivityName (case-insensitive)
+// Get activity by name (case-insensitive)
 app.get('/api/activity/name/:activityName', async (req, res) => {
   try {
     const { activityName } = req.params;
     const activity = await Activity.findOne({
       ActivityName: new RegExp(`^${activityName}$`, 'i'),
     });
+
     if (!activity) return res.status(404).json({ message: 'Activity not found' });
+
     res.status(200).json(activity);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
-// Create a new activity
+// Create activity
 app.post('/api/activities', async (req, res) => {
   try {
     const activity = await Activity.create(req.body);
-    res.status(200).json(activity);
+    res.status(201).json(activity);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
-// Update activity by ID
+// Update activity
 app.put('/api/activity/:id', async (req, res) => {
   try {
     const { id } = req.params;
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ message: 'Invalid activity ID format' });
     }
+
     const activity = await Activity.findByIdAndUpdate(id, req.body, { new: true });
     if (!activity) return res.status(404).json({ message: 'Activity not found' });
+
     res.status(200).json(activity);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
-// Delete activity 
+// Delete activity
 app.delete('/api/activity/:id', async (req, res) => {
   try {
     const { id } = req.params;
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ message: 'Invalid activity ID format' });
     }
+
     const activity = await Activity.findByIdAndDelete(id);
     if (!activity) return res.status(404).json({ message: 'Activity not found' });
+
     res.status(200).json({ message: 'Activity deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
-//connect to mongoose database
-mongoose
-  .connect(
-    'mongodb+srv://Admin:l3ImvS926o51YsFr@backenddb.z3g64ug.mongodb.net/?retryWrites=true&w=majority&appName=BackendDB'
-  )
-  .then(() => {
-    console.log('Connected to database');
-    app.listen(port, () => {
-      console.log(`Server is running on port ${port}`);
-    });
-  })
-  .catch((error) => {
-    console.error('Connection Failed:', error.message);
-  });
+/* ---------- CATCH-ALL ROUTE (for frontend) ---------- */
+
+// Fallback to index.html for all non-API GET requests
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});

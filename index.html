@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Activity Manager</title>
+    <link rel="stylesheet" href="stylesheet.css" />
+  </head>
+  <body>
+    <!-- Welcome Section -->
+    <section class="welcome-hero">
+      <div class="welcome-content">
+        <h1>
+          Welcome to <span class="highlight">Activity Manager</span>
+        </h1>
+        <p>
+          Your trusted partner to plan, track, and manage your daily activities
+          effortlessly.
+        </p>
+        <button type="button" onclick="location.href='/edit'">Edit Activity</button>
+      </div>
+    </section>
+
+    <!-- Activity Form Section -->
+    <div class="container">
+      <h2 class="form-heading">Create a New Activity</h2>
+      <form id="activityForm">
+        <label for="activityName">Activity Name:</label>
+        <input type="text" name="ActivityName" id="activityName" required />
+
+        <label for="location">Location:</label>
+        <input type="text" name="Location" id="location" required />
+
+        <label for="date">Date:</label>
+        <input type="date" name="Date" id="date" required />
+
+        <label for="time">Time:</label>
+        <input type="time" name="Time" id="time" required />
+
+        <label for="description">Description:</label>
+        <textarea name="Description" id="description" rows="4" required></textarea>
+
+        <button type="submit">Submit Activity</button>
+        <div id="feedback" class="feedback-message"></div>
+      </form>
+    </div>
+
+    <!-- Script -->
+    <script>
+      const form = document.getElementById('activityForm');
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const formData = {
+          ActivityName: form.ActivityName.value,
+          Location: form.Location.value,
+          Date: form.Date.value,
+          Time: form.Time.value,
+          Description: form.Description.value,
+        };
+
+        try {
+          const response = await fetch('/api/activities', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData),
+          });
+
+          if (!response.ok) throw new Error('Failed to save activity');
+
+          await response.json();
+
+          document.getElementById('feedback').textContent = 'Activity saved successfully!';
+          document.getElementById('feedback').classList.remove('error');
+          form.reset();
+        } catch (err) {
+          document.getElementById('feedback').textContent = 'Error: ' + err.message;
+          document.getElementById('feedback').classList.add('error');
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -2,7 +2,9 @@ const express = require('express');
 const mongoose = require('mongoose');
 const Activity = require('./models/activitymodel.js');
 const path = require('path');
+const { Script } = require('vm');
 const port = 3000;
+const build = require("react-scripts")
 
 const app = express();
 

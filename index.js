@@ -14,12 +14,12 @@ app.use(express.static(__dirname));
 
 //linking front-end(index.html) to port
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+  res.sendFile(path.join(__dirname, 'public/index.html'));
 });
 
 //linking front-end(edit.html) to port
 app.get('/edit', (req, res) => {
-  res.sendFile(path.join(__dirname, 'edit.html'));
+  res.sendFile(path.join(__dirname, 'public/edit.html'));
 });
 
 // Get all activities (full details)

@@ -7,12 +7,8 @@ require("dotenv").config();
 const app = express();
 const port = process.env.PORT || 3000;
 
-// ✅ Enable CORS so Netlify frontend can call backend
-app.use(cors({
-  origin: "https://courageous-starlight-7aa2bb.netlify.app", // allow only your Netlify site
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  allowedHeaders: ["Content-Type"]
-}));
+app.use(cors());
+
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

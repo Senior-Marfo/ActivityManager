@@ -1,26 +1,47 @@
+require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
-const cors = require("cors"); // ✅ Added CORS
+const cors = require("cors");
 const Activity = require("./models/activitymodel.js");
-require("dotenv").config();
 
 const app = express();
-const port = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 
-app.use(cors());
+/* ===========================
+   CORS CONFIG
+   =========================== */
+const allowedOrigins = [
+  "https://funny-dolphin-42554e.netlify.app",   // your current Netlify site
+  "https://precious-trifle-f8d0fb.netlify.app"  // keep if you use multiple deployments
+];
 
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true); // allow Postman/cURL
+      if (allowedOrigins.indexOf(origin) === -1) {
+        const msg = "CORS policy does not allow access from this origin.";
+        return callback(new Error(msg), false);
+      }
+      return callback(null, true);
+    },
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type"],
+    credentials: true,
+  })
+);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ✅ Health check route
+/* ===========================
+   ROUTES
+   =========================== */
+
+// Health check
 app.get("/", (req, res) => {
   res.json({ message: "Backend is running 🚀" });
 });
-
-/* ===========================
-   API ROUTES
-   =========================== */
 
 // Create new activity
 app.post("/api/activities", async (req, res) => {
@@ -94,8 +115,8 @@ mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
     console.log("✅ Connected to MongoDB");
-    app.listen(port, () => {
-      console.log(`🚀 Server running on port ${port}`);
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
     });
   })
   .catch((error) => {

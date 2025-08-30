@@ -8,31 +8,20 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 /* ===========================
-   CORS CONFIG
+   MIDDLEWARE
    =========================== */
-const allowedOrigins = [
-  "https://funny-dolphin-42554e.netlify.app",   // your current Netlify site
-  "https://precious-trifle-f8d0fb.netlify.app"  // keep if you use multiple deployments
-];
+// ✅ Allow ALL origins (temporary fix to remove CORS errors)
+app.use(cors());
 
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      if (!origin) return callback(null, true); // allow Postman/cURL
-      if (allowedOrigins.indexOf(origin) === -1) {
-        const msg = "CORS policy does not allow access from this origin.";
-        return callback(new Error(msg), false);
-      }
-      return callback(null, true);
-    },
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type"],
-    credentials: true,
-  })
-);
-
+// Parse JSON request bodies
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// ✅ Debug logger (check in Render logs)
+app.use((req, res, next) => {
+  console.log("Request:", req.method, req.url, "Origin:", req.headers.origin);
+  next();
+});
 
 /* ===========================
    ROUTES

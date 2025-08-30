@@ -3,6 +3,10 @@ const mongoose = require('mongoose');
 const Activity = require('./models/activitymodel.js');
 const path = require('path');
 require('dotenv').config();
+const cors = require("cors");
+
+app.use(cors());
+
 
 const app = express();
 const port = process.env.PORT || 3000; // ✅ important for Render

@@ -1,284 +1,140 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Edit Activity</title>
-    <link rel="stylesheet" href="/public/edit.css" />
-    <style>
-      /* Quick styling for list */
-      #activityList {
-        max-height: 200px;
-        overflow-y: auto;
-        border: 1px solid #ccc;
-        padding: 0;
-        margin-top: 10px;
-        list-style: none;
-        width: 300px;
-      }
-      #activityList li {
-        padding: 8px 12px;
-        cursor: pointer;
-        border-bottom: 1px solid #eee;
-      }
-      #activityList li:hover {
-        background-color: #f0f0f0;
-      }
-      #activityList li.selected {
-        background-color: #d0eaff;
-        font-weight: bold;
-      }
-    </style>
+  <title>Edit Activity</title>
+  <link rel="stylesheet" href="edit.css" />
 </head>
 <body>
-    <h1>Edit Activity</h1>
+  <h1>Edit Activity</h1>
+  <label for="activityId">Enter Activity ID:</label>
+  <input type="text" id="activityId" placeholder="Activity ID here" />
+  <button id="loadByIdBtn">Load Activity By ID</button>
+  <br><br>
+  <label for="activityNameSearch">Enter Activity Name:</label>
+  <input type="text" id="activityNameSearch" placeholder="Activity Name here" />
+  <button id="loadByNameBtn">Load Activity By Name</button>
+  <br><br>
+  <h3>Or select an activity from the list below:</h3>
+  <ul id="activityList"></ul>
 
-    <label for="activityId">Enter Activity ID:</label>
-    <input type="text" id="activityId" placeholder="Activity ID here" />
-    <button id="loadByIdBtn">Load Activity By ID</button>
+  <div class="container">
+    <form id="editForm" style="display:none; margin-top:20px;">
+      <label for="ActivityName">Activity Name:</label>
+      <input type="text" name="ActivityName" id="ActivityName" required /><br />
+      <label for="Location">Location:</label>
+      <input type="text" name="Location" id="Location" required /><br />
+      <label for="Date">Date:</label>
+      <input type="date" name="Date" id="Date" required /><br />
+      <label for="Time">Time:</label>
+      <input type="time" name="Time" id="Time" required /><br />
+      <label for="Description">Description:</label>
+      <textarea name="Description" id="Description" required></textarea><br />
+      <button type="submit">Save Changes</button>
+      <button type="button" id="deleteBtn" style="margin-left: 10px;">Delete Activity</button>
+    </form>
+  </div>
 
-    <br /><br />
-
-    <label for="activityNameSearch">Enter Activity Name:</label>
-    <input type="text" id="activityNameSearch" placeholder="Activity Name here" />
-    <button id="loadByNameBtn">Load Activity By Name</button>
-
-    <br /><br />
-
-    <h3>Or select an activity from the list below:</h3>
-    <ul id="activityList" aria-label="List of existing activities"></ul>
-
-    <div class="container">
-        <form id="editForm" style="display:none; margin-top:20px;">
-            <label for="ActivityName">Activity Name:</label>
-            <input type="text" name="ActivityName" id="ActivityName" required /><br />
-
-            <label for="Location">Location:</label>
-            <input type="text" name="Location" id="Location" required /><br />
-
-            <label for="Date">Date:</label>
-            <input type="date" name="Date" id="Date" required /><br />
-
-            <label for="Time">Time:</label>
-            <input type="time" name="Time" id="Time" required /><br />
-
-            <label for="Description">Description:</label>
-            <textarea name="Description" id="Description" required></textarea><br />
-
-            <button type="submit" disabled>Save Changes</button>
-            <button type="button" id="deleteBtn" disabled style="margin-left: 10px; background-color: #d9534f; color: white;">Delete Activity</button>
-        </form>
-    </div>
-
-    <p id="message" style="color:red;" aria-live="polite"></p>
+  <p id="message" style="color:red;"></p>
 
 <script>
-    const loadByIdBtn = document.getElementById('loadByIdBtn');
-    const activityIdInput = document.getElementById('activityId');
-    const loadByNameBtn = document.getElementById('loadByNameBtn');
-    const activityNameInput = document.getElementById('activityNameSearch');
+  const API_URL = "https://activity-manager-oagb.onrender.com";
 
-    const activityListEl = document.getElementById('activityList');
-    const editForm = document.getElementById('editForm');
-    const message = document.getElementById('message');
-    const deleteBtn = document.getElementById('deleteBtn');
-    const saveBtn = editForm.querySelector('button[type="submit"]');
+  const loadByIdBtn = document.getElementById('loadByIdBtn');
+  const loadByNameBtn = document.getElementById('loadByNameBtn');
+  const activityIdInput = document.getElementById('activityId');
+  const activityNameInput = document.getElementById('activityNameSearch');
+  const activityListEl = document.getElementById('activityList');
+  const editForm = document.getElementById('editForm');
+  const message = document.getElementById('message');
+  const deleteBtn = document.getElementById('deleteBtn');
 
-    let selectedActivityId = null;
+  let selectedActivityId = null;
 
-    function toggleButtons(enabled) {
-        deleteBtn.disabled = !enabled;
-        saveBtn.disabled = !enabled;
+  async function fetchActivityList() {
+    try {
+      const res = await fetch(`${API_URL}/api/activity-list`);
+      const activities = await res.json();
+      activityListEl.innerHTML = '';
+      activities.forEach(activity => {
+        const li = document.createElement('li');
+        li.textContent = `${activity.ActivityName} (ID: ${activity._id})`;
+        li.addEventListener('click', () => loadActivityById(activity._id));
+        activityListEl.appendChild(li);
+      });
+    } catch (err) {
+      message.textContent = err.message;
     }
+  }
 
-    function clearForm() {
-        editForm.ActivityName.value = '';
-        editForm.Location.value = '';
-        editForm.Date.value = '';
-        editForm.Time.value = '';
-        editForm.Description.value = '';
-        selectedActivityId = null;
-        activityIdInput.value = '';
-        activityNameInput.value = '';
-        editForm.style.display = 'none';
-        toggleButtons(false);
-        clearSelectedFromList();
+  async function loadActivityById(id) {
+    try {
+      const res = await fetch(`${API_URL}/api/activity/${id}`);
+      if (!res.ok) throw new Error('Activity not found');
+      const activity = await res.json();
+      fillForm(activity);
+    } catch (err) {
+      message.textContent = err.message;
     }
+  }
 
-    function fillForm(activity) {
-        editForm.ActivityName.value = activity.ActivityName || '';
-        editForm.Location.value = activity.Location || '';
-        editForm.Date.value = activity.Date ? new Date(activity.Date).toISOString().slice(0, 10) : '';
-        editForm.Time.value = activity.Time || '';
-        editForm.Description.value = activity.Description || '';
-        selectedActivityId = activity._id;
-        activityIdInput.value = activity._id;
-        activityNameInput.value = '';
-        editForm.style.display = 'block';
-        toggleButtons(true);
-        highlightSelectedInList(activity._id);
+  async function loadActivityByName(name) {
+    try {
+      const res = await fetch(`${API_URL}/api/activity/name/${encodeURIComponent(name)}`);
+      if (!res.ok) throw new Error('Activity not found');
+      const activity = await res.json();
+      fillForm(activity);
+    } catch (err) {
+      message.textContent = err.message;
     }
+  }
 
-    // Fetch activity list and display
-    async function fetchActivityList() {
-        try {
-            const res = await fetch('/api/activity-list');
-            if (!res.ok) throw new Error('Failed to load activity list');
-            const activities = await res.json();
+  function fillForm(activity) {
+    editForm.ActivityName.value = activity.ActivityName;
+    editForm.Location.value = activity.Location;
+    editForm.Date.value = activity.Date.slice(0, 10);
+    editForm.Time.value = activity.Time;
+    editForm.Description.value = activity.Description;
+    selectedActivityId = activity._id;
+    editForm.style.display = 'block';
+  }
 
-            activityListEl.innerHTML = '';
-
-            if (activities.length === 0) {
-              activityListEl.innerHTML = '<li>No activities found.</li>';
-              return;
-            }
-
-            activities.forEach(activity => {
-                const li = document.createElement('li');
-                li.textContent = `${activity.ActivityName} (ID: ${activity._id})`;
-                li.setAttribute('data-id', activity._id);
-                li.tabIndex = 0; // Make focusable
-                li.addEventListener('click', () => {
-                    loadActivityById(activity._id);
-                });
-                li.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        loadActivityById(activity._id);
-                    }
-                });
-                activityListEl.appendChild(li);
-            });
-        } catch (err) {
-            message.style.color = 'red';
-            message.textContent = err.message;
-        }
+  editForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch(`${API_URL}/api/activity/${selectedActivityId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ActivityName: editForm.ActivityName.value,
+          Location: editForm.Location.value,
+          Date: editForm.Date.value,
+          Time: editForm.Time.value,
+          Description: editForm.Description.value,
+        })
+      });
+      if (!res.ok) throw new Error('Failed to update activity');
+      message.style.color = 'green';
+      message.textContent = 'Activity updated!';
+    } catch (err) {
+      message.textContent = err.message;
     }
+  });
 
-    // Highlight selected activity in the list
-    function highlightSelectedInList(id) {
-        clearSelectedFromList();
-        const items = activityListEl.querySelectorAll('li');
-        items.forEach(item => {
-            if (item.getAttribute('data-id') === id) {
-                item.classList.add('selected');
-                item.focus();
-            }
-        });
+  deleteBtn.addEventListener('click', async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/activity/${selectedActivityId}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete activity');
+      message.style.color = 'green';
+      message.textContent = 'Activity deleted!';
+      editForm.style.display = 'none';
+      fetchActivityList();
+    } catch (err) {
+      message.textContent = err.message;
     }
+  });
 
-    function clearSelectedFromList() {
-        const items = activityListEl.querySelectorAll('li');
-        items.forEach(item => item.classList.remove('selected'));
-    }
-
-    // Load activity by ID
-    async function loadActivityById(id) {
-        message.textContent = '';
-        if (!id) {
-            message.textContent = 'Please enter a valid ID';
-            return;
-        }
-        try {
-            const res = await fetch(`/api/activity/${id}`);
-            if (res.status === 404) {
-                message.textContent = 'Activity not found';
-                clearForm();
-                return;
-            }
-            if (!res.ok) throw new Error('Failed to fetch activity');
-            const activity = await res.json();
-            fillForm(activity);
-        } catch (err) {
-            message.textContent = err.message;
-        }
-    }
-
-    // Load activity by Name
-    async function loadActivityByName(name) {
-        message.textContent = '';
-        if (!name) {
-            message.textContent = 'Please enter a valid Activity Name';
-            return;
-        }
-        try {
-            const encodedName = encodeURIComponent(name);
-            const res = await fetch(`/api/activity/name/${encodedName}`);
-            if (res.status === 404) {
-                message.textContent = 'Activity not found';
-                clearForm();
-                return;
-            }
-            if (!res.ok) throw new Error('Failed to fetch activity');
-            const activity = await res.json();
-            fillForm(activity);
-        } catch (err) {
-            message.textContent = err.message;
-        }
-    }
-
-    loadByIdBtn.addEventListener('click', () => {
-        loadActivityById(activityIdInput.value.trim());
-    });
-
-    loadByNameBtn.addEventListener('click', () => {
-        loadActivityByName(activityNameInput.value.trim());
-    });
-
-    // Update activity
-    editForm.addEventListener('submit', async e => {
-        e.preventDefault();
-        if (!selectedActivityId) {
-            message.textContent = 'No activity loaded to update';
-            return;
-        }
-        const updatedData = {
-            ActivityName: editForm.ActivityName.value.trim(),
-            Location: editForm.Location.value.trim(),
-            Date: editForm.Date.value,
-            Time: editForm.Time.value,
-            Description: editForm.Description.value.trim(),
-        };
-        try {
-            const res = await fetch(`/api/activity/${selectedActivityId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updatedData),
-            });
-            if (!res.ok) throw new Error('Failed to update activity');
-            const updatedActivity = await res.json();
-            message.style.color = 'green';
-            message.textContent = 'Activity updated successfully';
-            // Refresh list after update
-            await fetchActivityList();
-            fillForm(updatedActivity);
-        } catch (err) {
-            message.style.color = 'red';
-            message.textContent = err.message;
-        }
-    });
-
-    // Delete activity
-    deleteBtn.addEventListener('click', async () => {
-        if (!selectedActivityId) return;
-        if (!confirm('Are you sure you want to delete this activity?')) return;
-
-        try {
-            const res = await fetch(`/api/activity/${selectedActivityId}`, {
-                method: 'DELETE',
-            });
-            if (!res.ok) throw new Error('Failed to delete activity');
-            message.style.color = 'green';
-            message.textContent = 'Activity deleted successfully';
-            clearForm();
-            await fetchActivityList();
-        } catch (err) {
-            message.style.color = 'red';
-            message.textContent = err.message;
-        }
-    });
-
-    // Initial load of activity list
-    fetchActivityList();
-
+  // Load activity list on page load
+  fetchActivityList();
 </script>
 </body>
 </html>

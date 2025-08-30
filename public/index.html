@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Activity Manager</title>
-    <link rel="stylesheet" href="/public/stylesheet.css" />
+    <link rel="stylesheet" href="stylesheet.css" />
   </head>
   <body>
     <!-- Welcome Section -->
@@ -17,7 +17,7 @@
           Your trusted partner to plan, track, and manage your daily activities
           effortlessly.
         </p>
-        <button type="button" onclick="location.href='/edit'">Edit Activity</button>
+        <button type="button" onclick="location.href='edit.html'">Edit Activity</button>
       </div>
     </section>
 
@@ -45,10 +45,10 @@
       </form>
     </div>
 
-    <!-- Script -->
     <script>
-      const form = document.getElementById('activityForm');
+      const API_URL = "https://activity-manager-oagb.onrender.com";
 
+      const form = document.getElementById('activityForm');
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -61,7 +61,7 @@
         };
 
         try {
-          const response = await fetch('/api/activities', {
+          const response = await fetch(`${API_URL}/api/activities`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(formData),
